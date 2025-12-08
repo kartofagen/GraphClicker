@@ -45,6 +45,7 @@ MonoBehaviour:
   - RPC_HandleClick
   - RPC_SetOwner
   - RPC_SetValue
+  - RPC_InitializeNode
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
