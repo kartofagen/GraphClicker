@@ -14,6 +14,10 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [Header("Node Properties")]
     [SerializeField] private int initialValue = 10;
     
+    [Header("Color Settings")]
+    [SerializeField] private Image buttonImage;
+    private static Dictionary<int, Color> _playerColors = new Dictionary<int, Color>();
+    
     private int _nodeValue;
     private int _currentNodeOwner = -1;
     private Dictionary<int, int> _playerScores = new Dictionary<int, int>();
@@ -29,6 +33,9 @@ public class GraphNode : MonoBehaviourPunCallbacks
             
         if (text == null)
             text = GetComponentInChildren<TMP_Text>();
+        
+        if (buttonImage == null)
+            buttonImage = GetComponent<Image>();
         
         if (_photonView.IsMine)
         {
@@ -46,6 +53,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
         _nodeValue = value;
         _currentNodeOwner = owner;
         UpdateNodeUI();
+        UpdateScoresText();
+        UpdateNodeColor();
     }
     
     private void OnNodeClicked()
@@ -82,6 +91,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
     
         UpdateNodeUI();
         UpdateScoresText();
+        UpdateNodeColor();
     }
     
     private void UpdateNodeUI()
@@ -115,6 +125,36 @@ public class GraphNode : MonoBehaviourPunCallbacks
                 scores += $"P{kvp.Key}: {kvp.Value}\n";
             }
             scoresText.text = scores;
+        }
+    }
+
+    private void UpdateNodeColor()
+    {
+        if (buttonImage == null) return;
+    
+        if (_currentNodeOwner == -1)
+        {
+            buttonImage.color = Color.gray;
+        }
+        else if (_playerColors.ContainsKey(_currentNodeOwner))
+        {
+            buttonImage.color = _playerColors[_currentNodeOwner];
+        }
+        else
+        {
+            buttonImage.color = Color.white;
+        }
+    }
+    
+    [PunRPC]
+    public void RPC_UpdatePlayerColor(int playerId, float r, float g, float b, float a)
+    {
+        Color color = new Color(r, g, b, a);
+        _playerColors[playerId] = color;
+    
+        if (_currentNodeOwner == playerId)
+        {
+            UpdateNodeColor();
         }
     }
 }
