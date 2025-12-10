@@ -29,9 +29,9 @@ public class PlayerController : MonoBehaviourPunCallbacks
         Debug.Log($"Local player initialized with number: {PhotonNetwork.LocalPlayer.ActorNumber}");
         
         _color = new Color(
-            Random.Range(0.5f, 1f),
-            Random.Range(0.5f, 1f),
-            Random.Range(0.5f, 1f),
+            Random.Range(0.3f, 1f),
+            Random.Range(0.3f, 1f),
+            Random.Range(0.3f, 1f),
             1f
         );
     
