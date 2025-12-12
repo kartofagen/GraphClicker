@@ -67,7 +67,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
         if (PhotonNetwork.LocalPlayer != null)
         {
             int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
-            int clickPower = 1;
+            int clickPower = MatchManager.Instance.GetPlayerData(playerId).ClickPower;
 
             _photonView.RPC("RPC_HandleClick", RpcTarget.All, playerId, clickPower);
         }

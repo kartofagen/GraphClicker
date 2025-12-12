@@ -9,8 +9,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     [SerializeField] private TMP_Text scoresText;
 
-    private Dictionary<int, Color> playerColors = new Dictionary<int, Color>();
-    private Dictionary<int, int> playerScores = new Dictionary<int, int>();
+    private Dictionary<int, IPlayerData> _players = new();
 
     private void Awake()
     {
@@ -23,11 +22,30 @@ public class MatchManager : MonoBehaviourPunCallbacks
             Destroy(gameObject);
         }
     }
+    
+    public void RegisterPlayer(int playerId, IPlayerData playerData)
+    {
+        if (_players.TryAdd(playerId, playerData))
+        {
+            Debug.Log($"Player {playerId} registered");
+        }
+    }
+    
+    public IPlayerData GetPlayerData(int playerId)
+    {
+        if (_players.TryGetValue(playerId, out IPlayerData playerData))
+        {
+            return playerData;
+        }
+        return null;
+    }
 
     public void UpdatePlayerScore(int playerId, int delta)
     {
-        playerScores.TryAdd(playerId, 0);
-        playerScores[playerId] += delta;
+        if (_players.TryGetValue(playerId, out IPlayerData player))
+        {
+            player.UpdateScore(delta);
+        }
     }
 
     public void UpdateScoresUI()
@@ -35,9 +53,9 @@ public class MatchManager : MonoBehaviourPunCallbacks
         if (scoresText != null)
         {
             string scores = "Scores:\n";
-            foreach (var kvp in playerScores)
+            foreach (var kvp in _players)
             {
-                scores += $"P{kvp.Key}: {kvp.Value}\n";
+                scores += $"P{kvp.Key}: {kvp.Value.Score}\n";
             }
             scoresText.text = scores;
         }
@@ -45,18 +63,11 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     public Color GetPlayerColor(int playerId)
     {
-        if (playerColors.TryGetValue(playerId, out Color color))
+        if (_players.TryGetValue(playerId, out IPlayerData player))
         {
-            return color;
+            return player.Color;
         }
         return Color.white;
-    }
-
-    [PunRPC]
-    public void RPC_SetPlayerColor(int playerId, float r, float g, float b, float a)
-    {
-        Color color = new Color(r, g, b, a);
-        playerColors[playerId] = color;
     }
 
     public void ChangeNodeOwner(int oldOwner, int newOwner, int value)

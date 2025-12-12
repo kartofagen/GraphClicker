@@ -1,12 +1,27 @@
 using UnityEngine;
 using Photon.Pun;
 
-public class PlayerController : MonoBehaviourPunCallbacks
+public interface IPlayerData
 {
-    [Header("Player Properties")]
-    [SerializeField] private float clickPower = 1f;
+    Color Color { get; }
+    int Score { get; }
+    int ClickPower { get; }
+    
+    void UpdateScore(int delta);
+}
+
+public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
+{
+    public Color Color => _color;
+    public int Score => _score;
+    public int ClickPower => clickPower;
+    
+    [Header("Properties")]
+    [SerializeField] private int clickPower = 1;
 
     private Color _color;
+    private int _score;
+    
     private GraphNode[] _ownedNodes;
     private int _ownedNodesSum = 0;
 
@@ -33,9 +48,13 @@ public class PlayerController : MonoBehaviourPunCallbacks
             1f, 1f
             );
 
-        MatchManager.Instance.photonView.RPC("RPC_SetPlayerColor", RpcTarget.AllBuffered,
-            PhotonNetwork.LocalPlayer.ActorNumber,
-            _color.r, _color.g, _color.b, _color.a);
+        int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        MatchManager.Instance.RegisterPlayer(playerId, this);
+    }
+
+    public void UpdateScore(int delta)
+    {
+        _score += delta;
     }
 
     private int CalculateNodesSum()
@@ -43,4 +62,6 @@ public class PlayerController : MonoBehaviourPunCallbacks
         //...
         return 0;
     }
+    
+    
 }
