@@ -1090,6 +1090,7 @@ MonoBehaviour:
   panels:
   - {fileID: 1813490372}
   - {fileID: 604898192}
+  OfflineMode: 0
 --- !u!1 &1350716797
 GameObject:
   m_ObjectHideFlags: 0

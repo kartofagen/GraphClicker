@@ -6,6 +6,7 @@ public class MenuManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] private int maxPlayers = 5;
     [SerializeField] private GameObject[] panels;
+    [SerializeField] private bool OfflineMode = false;
 
     private void Awake() => OpenPanel(0);
 
@@ -13,7 +14,10 @@ public class MenuManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.IsConnected)
         {
-            PhotonNetwork.ConnectUsingSettings();
+            if (!OfflineMode)
+                PhotonNetwork.ConnectUsingSettings();
+            else
+                PhotonNetwork.OfflineMode = true;
         }
         else
         {
