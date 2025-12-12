@@ -52,6 +52,11 @@ MonoBehaviour:
   - RPC_RegisterColor
   - RPC_RegisterPlayerColor
   - RPC_UpdatePlayerScore
+  - RPC_SyncPlayerData
+  - RPC_UpdateScore
+  - RPC_RequestSync
+  - RPC_SyncNodeState
+  - RPC_SyncPlayerColor
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

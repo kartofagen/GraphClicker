@@ -23,6 +23,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
     private int _currentNodeOwner = -1;
 
     private PhotonView _photonView;
+    private bool _isInitialized = false;
 
     private void Awake()
     {
@@ -37,26 +38,45 @@ public class GraphNode : MonoBehaviourPunCallbacks
         if (buttonImage == null)
             buttonImage = GetComponent<Image>();
 
-        if (_photonView.IsMine)
-        {
-            _nodeValue = UnityEngine.Random.Range(initialValueMin, initialValueMax);
-            _currentNodeOwner = -1;
-            _photonView.RPC("RPC_InitializeNode", RpcTarget.AllBuffered, _nodeValue, _currentNodeOwner);
-        }
-
         button.onClick.AddListener(OnNodeClicked);
     }
 
+    private void Start()
+    {
+        if (PhotonNetwork.IsMasterClient && _photonView.IsMine)
+        {
+            InitializeNode();
+        }
+        else if (!_isInitialized)
+        {
+            _photonView.RPC("RPC_RequestSync", RpcTarget.MasterClient);
+        }
+    }
+    
+    private void InitializeNode()
+    {
+        _nodeValue = UnityEngine.Random.Range(initialValueMin, initialValueMax + 1);
+        _currentNodeOwner = -1;
+        _isInitialized = true;
+        
+        _photonView.RPC("RPC_SyncNodeState", RpcTarget.AllBuffered, _nodeValue, _currentNodeOwner);
+    }
+
     [PunRPC]
-    private void RPC_InitializeNode(int value, int owner)
+    private void RPC_RequestSync()
+    {
+        if (PhotonNetwork.IsMasterClient && _photonView.IsMine)
+        {
+            _photonView.RPC("RPC_SyncNodeState", RpcTarget.Others, _nodeValue, _currentNodeOwner);
+        }
+    }
+
+    [PunRPC]
+    private void RPC_SyncNodeState(int value, int owner)
     {
         _nodeValue = value;
         _currentNodeOwner = owner;
-        if (_currentNodeOwner != -1)
-        {
-            MatchManager.Instance.UpdatePlayerScore(_currentNodeOwner, _nodeValue);
-            MatchManager.Instance.UpdateScoresUI();
-        }
+        _isInitialized = true;
         
         UpdateNodeUI();
         UpdateNodeColor();
@@ -76,6 +96,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [PunRPC]
     private void RPC_HandleClick(int playerId, int clickPower)
     {
+        Debug.Log($"Node clicked by player {playerId} with power {clickPower}");
+        
         if (_currentNodeOwner == -1 && _nodeValue == 0)
         {
             _currentNodeOwner = playerId;
@@ -109,7 +131,6 @@ public class GraphNode : MonoBehaviourPunCallbacks
     private void UpdateNodeUI()
     {
         string ownerText = _currentNodeOwner == -1 ? "Nobody" : $"P{_currentNodeOwner}";
-
         text.text = $"Value: {_nodeValue}\nOwner: {ownerText}";
     }
 
@@ -123,7 +144,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
         }
         else
         {
-            buttonImage.color = MatchManager.Instance.GetPlayerColor(_currentNodeOwner);
+            Color playerColor = MatchManager.Instance.GetPlayerColor(_currentNodeOwner);
+            buttonImage.color = playerColor;
         }
     }
 
