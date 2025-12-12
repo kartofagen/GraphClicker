@@ -56,7 +56,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     public void UpdateScoresUI()
     {
-        if (scoresText != null && _players.Count > 0)
+        if (scoresText && _players.Count > 0)
         {
             var sortedPlayers = _players.OrderBy(kvp => kvp.Key);
             
@@ -109,7 +109,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
                 var playerController = FindObjectsOfType<PlayerController>()
                     .FirstOrDefault(pc => pc.photonView.OwnerActorNr == kvp.Key);
                 
-                if (playerController != null)
+                if (playerController)
                 {
                     playerController.RequestScoreSync();
                 }
@@ -120,12 +120,19 @@ public class MatchManager : MonoBehaviourPunCallbacks
     public override void OnPlayerLeftRoom(Photon.Realtime.Player otherPlayer)
     {
         int playerId = otherPlayer.ActorNumber;
+        
         if (_players.ContainsKey(playerId))
         {
             _players.Remove(playerId);
             _playerColorsCache.Remove(playerId);
             UpdateScoresUI();
             Debug.Log($"Player {playerId} removed from MatchManager");
+        }
+        
+        GraphNode[] allNodes = FindObjectsOfType<GraphNode>();
+        foreach (GraphNode node in allNodes)
+        {
+            node.UpdateNodeColor();
         }
     }
 }

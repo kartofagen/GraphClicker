@@ -134,7 +134,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
         text.text = $"Value: {_nodeValue}\nOwner: {ownerText}";
     }
 
-    private void UpdateNodeColor()
+    public void UpdateNodeColor()
     {
         if (buttonImage == null) return;
 
