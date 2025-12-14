@@ -18,11 +18,17 @@ public class MatchManager : MonoBehaviourPunCallbacks
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
         }
+    }
+
+    private void Start()
+    {
+        Invoke(nameof(TryAssignMyStartingNode), 2f);
     }
     
     public void RegisterPlayer(int playerId, IPlayerData playerData)
@@ -98,22 +104,85 @@ public class MatchManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
+    public override void OnJoinedRoom()
     {
-        Debug.Log($"Player {newPlayer.ActorNumber} entered the room");
-        
+        base.OnJoinedRoom();
+
+        Debug.Log("=== ONJOINEDROOM СРАБОТАЛ! ===");
+        Debug.Log($"Игрок {PhotonNetwork.LocalPlayer.ActorNumber} в комнате. Master: {PhotonNetwork.IsMasterClient}");
+
+        UpdateScoresUI();
+
+        // Даём стартовую ноду с задержкой 2 секунды (увеличил для надёжности)
+        Invoke(nameof(TryAssignMyStartingNode), 2f);
+    }
+
+    private void TryAssignMyStartingNode()
+    {
+        Debug.Log("=== TRYASSIGNMYSTARTINGNODE ВЫЗВАН! ===");
+        int myId = PhotonNetwork.LocalPlayer.ActorNumber;
+
+        Debug.Log($"Попытка выдать стартовую ноду игроку {myId}. IsMaster: {PhotonNetwork.IsMasterClient}");
+
         if (PhotonNetwork.IsMasterClient)
         {
-            foreach (var kvp in _players)
+            AssignStartingNodeToPlayer(myId);
+        }
+        else
+        {
+            // Просим Master выдать нам ноду
+            photonView.RPC("RPC_RequestStartingNode", RpcTarget.MasterClient, myId);
+        }
+    }
+
+    [PunRPC]
+    private void RPC_RequestStartingNode(int playerId)
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            Debug.Log($"Master получил запрос на стартовую ноду от игрока {playerId}");
+            AssignStartingNodeToPlayer(playerId);
+        }
+    }
+
+    private void AssignStartingNodeToPlayer(int playerId)
+    {
+        if (GraphManager.Instance == null)
+        {
+            Debug.LogError("GraphManager не найден!");
+            return;
+        }
+
+        List<GraphNode> freeNodes = new List<GraphNode>();
+
+        foreach (GraphNode node in GraphManager.Instance.AllNodes)
+        {
+            if (node != null && node.CurrentNodeOwner == -1)
             {
-                var playerController = FindObjectsOfType<PlayerController>()
-                    .FirstOrDefault(pc => pc.photonView.OwnerActorNr == kvp.Key);
-                
-                if (playerController)
-                {
-                    playerController.RequestScoreSync();
-                }
+                freeNodes.Add(node);
             }
+        }
+
+        Debug.Log($"Свободных нод для игрока {playerId}: {freeNodes.Count}");
+
+        if (freeNodes.Count == 0)
+        {
+            Debug.LogWarning($"Нет свободных нод для игрока {playerId}!");
+            return;
+        }
+
+        int randomIndex = UnityEngine.Random.Range(0, freeNodes.Count);
+        GraphNode startingNode = freeNodes[randomIndex];
+
+        PhotonView nodePv = startingNode.GetComponent<PhotonView>();
+        if (nodePv != null)
+        {
+            nodePv.RPC("RPC_AssignAsStartingNode", RpcTarget.All, playerId);
+            Debug.Log($"УСПЕШНО выдана стартовая нода игроку {playerId}");
+        }
+        else
+        {
+            Debug.LogError($"У ноды нет PhotonView!");
         }
     }
 

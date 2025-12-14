@@ -19,7 +19,7 @@ MonoBehaviour:
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: ru
+    FixedRegion: 
     Server: 
     Port: 0
     ProxyServer: 
@@ -57,6 +57,9 @@ MonoBehaviour:
   - RPC_RequestSync
   - RPC_SyncNodeState
   - RPC_SyncPlayerColor
+  - RPC_AssignStartingNode
+  - RPC_RequestStartingNode
+  - RPC_AssignAsStartingNode
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

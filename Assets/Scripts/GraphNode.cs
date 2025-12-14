@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using System;
+using System.Collections.Generic;
 
 public class GraphNode : MonoBehaviourPunCallbacks
 {
@@ -21,9 +22,35 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private int _nodeValue;
     private int _currentNodeOwner = -1;
+    public int CurrentNodeOwner => _currentNodeOwner; // Для доступа извне (GraphManager)
 
     private PhotonView _photonView;
     private bool _isInitialized = false;
+
+    [Header("Graph")]
+    [SerializeField] private int nodeIndex = -1; // Заполни в инспекторе: 0, 1, 2...9
+
+    private GraphManager _graphManager;
+
+    private GraphManager graphManager
+    {
+        get
+        {
+            if (_graphManager == null)
+            {
+                _graphManager = GraphManager.Instance;
+                if (_graphManager == null)
+                {
+                    Debug.LogError($"[НОДА {nodeIndex}] GraphManager всё ещё null! Убедись, что объект GraphManager есть в сцене и активен.");
+                }
+                else
+                {
+                    Debug.Log($"[НОДА {nodeIndex}] GraphManager найден (lazy init)");
+                }
+            }
+            return _graphManager;
+        }
+    }
 
     private void Awake()
     {
@@ -52,13 +79,13 @@ public class GraphNode : MonoBehaviourPunCallbacks
             _photonView.RPC("RPC_RequestSync", RpcTarget.MasterClient);
         }
     }
-    
+
     private void InitializeNode()
     {
         _nodeValue = UnityEngine.Random.Range(initialValueMin, initialValueMax + 1);
         _currentNodeOwner = -1;
         _isInitialized = true;
-        
+
         _photonView.RPC("RPC_SyncNodeState", RpcTarget.AllBuffered, _nodeValue, _currentNodeOwner);
     }
 
@@ -77,19 +104,71 @@ public class GraphNode : MonoBehaviourPunCallbacks
         _nodeValue = value;
         _currentNodeOwner = owner;
         _isInitialized = true;
-        
+
         UpdateNodeUI();
         UpdateNodeColor();
+
+        graphManager?.OnNodeOwnerChanged(nodeIndex);
     }
 
     private void OnNodeClicked()
     {
-        if (PhotonNetwork.LocalPlayer != null)
-        {
-            int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
-            int clickPower = MatchManager.Instance.GetPlayerData(playerId).ClickPower;
+        if (PhotonNetwork.LocalPlayer == null) return;
 
-            _photonView.RPC("RPC_HandleClick", RpcTarget.All, playerId, clickPower);
+        int myId = PhotonNetwork.LocalPlayer.ActorNumber;
+        int clickPower = MatchManager.Instance.GetPlayerData(myId)?.ClickPower ?? 1;
+
+        bool canClick = false;
+
+        // Если нода уже моя — можно кликать всегда
+        if (_currentNodeOwner == myId)
+        {
+            canClick = true;
+        }
+        else
+        {
+            // Проверяем соседей
+            List<int> neighbors = graphManager.GetNeighbors(nodeIndex);
+            foreach (int neighIndex in neighbors)
+            {
+                GraphNode neighbor = graphManager.AllNodes[neighIndex];
+                if (neighbor.CurrentNodeOwner == myId) // Используем публичное свойство!
+                {
+                    canClick = true;
+                    break;
+                }
+            }
+
+            // Дополнительное правило: первый захват нейтральной ноды разрешён всегда
+            // (чтобы игрок мог начать игру)
+            if (!canClick && _currentNodeOwner == -1)
+            {
+                bool hasAnyNode = false;
+                foreach (GraphNode node in graphManager.AllNodes)
+                {
+                    if (node.CurrentNodeOwner == myId)
+                    {
+                        hasAnyNode = true;
+                        break;
+                    }
+                }
+
+                if (!hasAnyNode)
+                {
+                    canClick = true;
+                }
+            }
+        }
+
+        if (canClick)
+        {
+            // ← ИСПРАВЛЕНО: передаём myId, а не несуществующую playerId
+            _photonView.RPC("RPC_HandleClick", RpcTarget.All, myId, clickPower);
+        }
+        else
+        {
+            Debug.Log($"Player {myId} НЕ может захватить ноду [{nodeIndex}]: нет соседней своей вершины.");
+            // Можно добавить визуальный отклик: мигание красным и т.п.
         }
     }
 
@@ -97,12 +176,13 @@ public class GraphNode : MonoBehaviourPunCallbacks
     private void RPC_HandleClick(int playerId, int clickPower)
     {
         Debug.Log($"Node clicked by player {playerId} with power {clickPower}");
-        
+
+        // Специальный случай: если значение 0 и никто не владеет — захватываем сразу
         if (_currentNodeOwner == -1 && _nodeValue == 0)
         {
             _currentNodeOwner = playerId;
         }
-        
+
         if (_currentNodeOwner == playerId)
         {
             _nodeValue += clickPower;
@@ -125,13 +205,21 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
         UpdateNodeUI();
         UpdateNodeColor();
+        graphManager?.OnNodeOwnerChanged(nodeIndex);
         MatchManager.Instance.UpdateScoresUI();
     }
 
     private void UpdateNodeUI()
     {
         string ownerText = _currentNodeOwner == -1 ? "Nobody" : $"P{_currentNodeOwner}";
-        text.text = $"Value: {_nodeValue}\nOwner: {ownerText}";
+        text.text = $"{_nodeValue}\n{ownerText}";  // Упрощённый текст: только значение и владелец
+
+        // Правильные настройки для маленького текста
+        text.fontSize = 24f;                    // Базовый размер — подбери (16–28 обычно хорошо)
+        text.fontSizeMin = 10f;                 // Минимальный размер при авто-подгонке
+        text.fontSizeMax = 28f;                 // Максимальный
+        text.enableAutoSizing = true;           // Включаем авто-размер
+        text.alignment = TextAlignmentOptions.Center; // По центру
     }
 
     public void UpdateNodeColor()
@@ -157,6 +245,22 @@ public class GraphNode : MonoBehaviourPunCallbacks
         MatchManager.Instance.ChangeNodeOwner(oldOwner, _currentNodeOwner, _nodeValue);
         UpdateNodeUI();
         UpdateNodeColor();
+        MatchManager.Instance.UpdateScoresUI();
+    }
+
+    [PunRPC]
+    private void RPC_AssignAsStartingNode(int playerId)
+    {
+        if (_currentNodeOwner != -1) return; // Уже занята — не трогаем
+
+        _currentNodeOwner = playerId;
+        _nodeValue = Math.Max(_nodeValue, 10); // Минимум 10, или оставь как есть
+
+        Debug.Log($"Нода [{nodeIndex}] назначена как стартовая игроку {playerId}");
+
+        UpdateNodeUI();
+        UpdateNodeColor();
+        graphManager?.OnNodeOwnerChanged(nodeIndex);
         MatchManager.Instance.UpdateScoresUI();
     }
 }
