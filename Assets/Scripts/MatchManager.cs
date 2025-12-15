@@ -198,7 +198,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             Debug.Log($"Player {playerId} removed from MatchManager");
         }
         
-        GraphNode[] allNodes = FindObjectsOfType<GraphNode>();
+        GraphNode[] allNodes = FindObjectsByType<GraphNode>(FindObjectsSortMode.None);
         foreach (GraphNode node in allNodes)
         {
             node.UpdateNodeColor();

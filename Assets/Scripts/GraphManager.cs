@@ -9,8 +9,6 @@ public class GraphManager : MonoBehaviour
     [SerializeField] private GraphNode[] allNodes;
     public GraphNode[] AllNodes => allNodes;
 
-    [SerializeField] private LineRenderer linePrefab; // Prefab с LineRenderer (или UI Line Renderer)
-
     private Dictionary<int, List<int>> adjacencyList = new();
     private List<LineRenderer> edgeRenderers = new();
 
@@ -29,6 +27,8 @@ public class GraphManager : MonoBehaviour
     private void Start()
     {
         SetupGraph();
+
+        CreateEdgesVisual();
     }
 
     private void SetupGraph()
@@ -67,54 +67,61 @@ public class GraphManager : MonoBehaviour
         {
             if (lr != null) Destroy(lr.gameObject);
         }
+
         edgeRenderers.Clear();
+
+        // Получаем Canvas и его камеру
+        Canvas canvas = allNodes[0].GetComponentInParent<Canvas>();
+        Camera canvasCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
         for (int from = 0; from < allNodes.Length; from++)
         {
             foreach (int to in adjacencyList[from])
             {
-                if (from < to) // избегаем дубликатов
+                if (from < to)
                 {
                     GameObject lineObj = new GameObject($"Edge_{from}_{to}");
-                    // Можно сделать parent'ом пустой объект или граф, но не обязательно
-                    lineObj.transform.parent = transform; // или null
-
+                    lineObj.transform.SetParent(transform, false);
+                    
                     LineRenderer lr = lineObj.AddComponent<LineRenderer>();
-
                     lr.useWorldSpace = true;
 
-                    Vector3 startPos = allNodes[from].transform.position;
-                    Vector3 endPos = allNodes[to].transform.position;
+                    lr.startWidth = 0.05f;
+                    lr.endWidth = 0.05f;
+                    lr.material = new Material(Shader.Find("Sprites/Default"));
+                    lr.material.color = Color.black;
+                    lr.numCapVertices = 8;
+                    
+                    RectTransform rectFrom = allNodes[from].GetComponent<RectTransform>();
+                    RectTransform rectTo = allNodes[to].GetComponent<RectTransform>();
 
-                    // УБИРАЕМ изменение Z! Оставляем как у нод (обычно Z=0)
-                    // startPos.z = ... — УДАЛИТЬ!
-                    // endPos.z = ... — УДАЛИТЬ!
+                    Vector3 startPos = GetWorldPositionFromRectTransform(rectFrom, canvas, canvasCamera);
+                    Vector3 endPos = GetWorldPositionFromRectTransform(rectTo, canvas, canvasCamera);
+
+                    startPos.z = transform.position.z + 1;
+                    endPos.z = transform.position.z + 1;
 
                     lr.positionCount = 2;
                     lr.SetPosition(0, startPos);
                     lr.SetPosition(1, endPos);
 
-                    // Толщина
-                    lr.startWidth = 5f; // 10f — это ОЧЕНЬ толстая линия! В 2D это может быть 10 юнитов шириной!
-                    lr.endWidth = 5f;
-
-                    // Материал
-                    lr.material = new Material(Shader.Find("Sprites/Default"));
-                    lr.material.color = Color.black;
-
-                    // Округлые концы
-                    lr.numCapVertices = 8;
-
-                    // ВАЖНО: порядок отрисовки
-                    lr.sortingLayerName = "Default"; // или создай слой "Background" или "Edges"
-                    lr.sortingOrder = 0; // линии под нодами
-
-                    // Если ноды используют SpriteRenderer, поставь им sortingOrder = 10, например
-
                     edgeRenderers.Add(lr);
                 }
             }
         }
+    }
+
+    private Vector3 GetWorldPositionFromRectTransform(RectTransform rectTransform, Canvas canvas, Camera canvasCamera)
+    {
+        // Для ScreenSpaceOverlay
+        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            Vector3 screenPos = rectTransform.position;
+            // Создаем точку в мировых координатах на определенной глубине
+            return Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
+        }
+        // Для других режимов Canvas
+        return rectTransform.position;
     }
 
     public List<int> GetNeighbors(int nodeIndex)
