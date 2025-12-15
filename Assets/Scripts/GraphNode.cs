@@ -22,7 +22,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private int _nodeValue;
     private int _currentNodeOwner = -1;
-    public int CurrentNodeOwner => _currentNodeOwner; // Для доступа извне (GraphManager)
+    public int CurrentNodeOwner => _currentNodeOwner;
 
     private PhotonView _photonView;
     private bool _isInitialized = false;
@@ -214,12 +214,12 @@ public class GraphNode : MonoBehaviourPunCallbacks
         string ownerText = _currentNodeOwner == -1 ? "Nobody" : $"P{_currentNodeOwner}";
         text.text = $"{_nodeValue}\n{ownerText}";  // Упрощённый текст: только значение и владелец
 
-        // Правильные настройки для маленького текста
+        /*// Правильные настройки для маленького текста
         text.fontSize = 24f;                    // Базовый размер — подбери (16–28 обычно хорошо)
         text.fontSizeMin = 10f;                 // Минимальный размер при авто-подгонке
         text.fontSizeMax = 28f;                 // Максимальный
         text.enableAutoSizing = true;           // Включаем авто-размер
-        text.alignment = TextAlignmentOptions.Center; // По центру
+        text.alignment = TextAlignmentOptions.Center; // По центру*/
     }
 
     public void UpdateNodeColor()
@@ -255,6 +255,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
         _currentNodeOwner = playerId;
         _nodeValue = Math.Max(_nodeValue, 10); // Минимум 10, или оставь как есть
+        MatchManager.Instance.UpdatePlayerScore(playerId, _nodeValue);
 
         Debug.Log($"Нода [{nodeIndex}] назначена как стартовая игроку {playerId}");
 

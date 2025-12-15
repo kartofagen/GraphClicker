@@ -46,7 +46,7 @@ public class GraphManager : MonoBehaviour
         adjacencyList[9] = new List<int> {8, 10, 14, 15};
         adjacencyList[10] = new List<int> {9, 11};
         adjacencyList[11] = new List<int> {10};
-        adjacencyList[12] = new List<int> {3, 12};
+        adjacencyList[12] = new List<int> {3, 13};
         adjacencyList[13] = new List<int> {12};
         adjacencyList[14] = new List<int> {3, 8, 9, 17};
         adjacencyList[15] = new List<int> {9, 16};
@@ -86,10 +86,10 @@ public class GraphManager : MonoBehaviour
                     LineRenderer lr = lineObj.AddComponent<LineRenderer>();
                     lr.useWorldSpace = true;
 
-                    lr.startWidth = 0.05f;
-                    lr.endWidth = 0.05f;
+                    lr.startWidth = 0.1f;
+                    lr.endWidth = 0.1f;
                     lr.material = new Material(Shader.Find("Sprites/Default"));
-                    lr.material.color = Color.black;
+                    lr.material.color = Color.white;
                     lr.numCapVertices = 8;
                     
                     RectTransform rectFrom = allNodes[from].GetComponent<RectTransform>();

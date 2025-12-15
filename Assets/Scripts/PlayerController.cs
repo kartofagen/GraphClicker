@@ -23,7 +23,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
     private int _score;
     
     private GraphNode[] _ownedNodes;
-    private int _ownedNodesSum = 0;
 
     private PhotonView _photonView;
     private bool _isInitialized = false;
@@ -86,11 +85,5 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
         {
             _photonView.RPC("RPC_UpdateScore", RpcTarget.All, _score);
         }
-    }
-
-    private int CalculateNodesSum()
-    {
-        //...
-        return 0;
     }
 }
