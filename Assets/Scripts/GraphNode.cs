@@ -9,7 +9,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
 {
     [Header("UI References")]
     [SerializeField] private Button button;
-    [SerializeField] private TMP_Text text;
+    [SerializeField] private TMP_Text ownerText;
+    [SerializeField] private TMP_Text scoreText;
 
     [Header("Node Properties")]
     [Range(0, 100)]
@@ -28,7 +29,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
     private bool _isInitialized = false;
 
     [Header("Graph")]
-    [SerializeField] private int nodeIndex = -1; // Заполни в инспекторе: 0, 1, 2...9
+    [SerializeField] private int nodeIndex = -1;
 
     private GraphManager _graphManager;
 
@@ -58,9 +59,6 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
         if (button == null)
             button = GetComponent<Button>();
-
-        if (text == null)
-            text = GetComponentInChildren<TMP_Text>();
 
         if (buttonImage == null)
             buttonImage = GetComponent<Image>();
@@ -211,8 +209,10 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private void UpdateNodeUI()
     {
-        string ownerText = _currentNodeOwner == -1 ? "Nobody" : $"P{_currentNodeOwner}";
-        text.text = $"{_nodeValue}\n{ownerText}";  // Упрощённый текст: только значение и владелец
+        string ownerName = _currentNodeOwner == -1 ? "Nobody" : $"P{_currentNodeOwner}";
+        ownerText.text = $"{ownerName}";
+        
+        scoreText.text = $"{_nodeValue}";
 
         /*// Правильные настройки для маленького текста
         text.fontSize = 24f;                    // Базовый размер — подбери (16–28 обычно хорошо)
