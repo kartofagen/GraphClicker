@@ -7,6 +7,8 @@ public class GraphManager : MonoBehaviour
 
     [Header("Graph Config")]
     [SerializeField] private GraphNode[] allNodes;
+    [SerializeField] private GameObject lineExample;
+    
     public GraphNode[] AllNodes => allNodes;
 
     private Dictionary<int, List<int>> adjacencyList = new();
@@ -80,17 +82,11 @@ public class GraphManager : MonoBehaviour
             {
                 if (from < to)
                 {
-                    GameObject lineObj = new GameObject($"Edge_{from}_{to}");
+                    GameObject lineObj = Instantiate(lineExample);
+                    lineObj.name = $"Edge_{from}_{to}";
                     lineObj.transform.SetParent(transform, false);
                     
-                    LineRenderer lr = lineObj.AddComponent<LineRenderer>();
-                    lr.useWorldSpace = true;
-
-                    lr.startWidth = 0.1f;
-                    lr.endWidth = 0.1f;
-                    lr.material = new Material(Shader.Find("Sprites/Default"));
-                    lr.material.color = Color.white;
-                    lr.numCapVertices = 8;
+                    LineRenderer lr = lineObj.GetComponent<LineRenderer>();
                     
                     RectTransform rectFrom = allNodes[from].GetComponent<RectTransform>();
                     RectTransform rectTo = allNodes[to].GetComponent<RectTransform>();

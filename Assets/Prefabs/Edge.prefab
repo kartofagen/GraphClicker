@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 3932055141118726253}
   - component: {fileID: 1621115827265460120}
   - component: {fileID: 1786319777668510254}
-  m_Layer: 0
-  m_Name: Edge_3_4
+  m_Layer: 3
+  m_Name: Edge
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75,15 +75,15 @@ LineRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 2102110973
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_Positions:
   - {x: 1.8338056, y: 0.89846253, z: 1}
   - {x: -0.1649862, y: -0.8876926, z: 1}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1
+    widthMultiplier: 0.7
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -110,8 +110,8 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.9716981, g: 0.93044674, b: 0.93044674, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 0, g: 0.17758034, b: 0.25157225, a: 0.88235295}
+      key1: {r: 0, g: 0.17758034, b: 0.25157225, a: 0.88235295}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -201,6 +201,6 @@ SpriteRenderer:
   m_Size: {x: 10.24, y: 10.24}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
