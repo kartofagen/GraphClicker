@@ -14,6 +14,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
     [Header("Bonuses")]
     [SerializeField] private UnityEngine.UI.Button[] bonusButtons;
     [SerializeField] private int[] prices = {50, 100, 75};
+    [SerializeField] private TMP_Text[] priceTexts;
 
 [SerializeField] private Color avaliableColor;
     [SerializeField] private Color unavailableColor;
@@ -123,7 +124,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
         {
             var sortedPlayers = _players.OrderBy(kvp => kvp.Key);
             
-            string scores = "Scores:\n";
+            string scores = "Влияние:\n";
             foreach (var kvp in sortedPlayers)
             {
                 scores += $"P{kvp.Key}: {kvp.Value.Score}\n";
@@ -173,11 +174,19 @@ public class MatchManager : MonoBehaviourPunCallbacks
             UpdatePlayerGold(playerId, -prices[0]);
             
             player.ApplyBonus("click_power", 2f);
-            clickPowerText.text = $"INCREASE CLICK POWER: {player.ClickPower}";
+            clickPowerText.text = $"УВЕЛИЧИТЬ СИЛУ КЛИКА: {player.ClickPower}";
+
+            IncreasePrice(0);
             
             UpdateScoresUI();
             UpdateGoldUI();
         }
+    }
+
+    private void IncreasePrice(int index)
+    {
+        prices[index] *= 2;
+        priceTexts[index].text = prices[index].ToString();
     }
     
     public void BuyGoldMultiplierBonus()
@@ -198,6 +207,8 @@ public class MatchManager : MonoBehaviourPunCallbacks
                     node.ApplyGoldMultiplier(2f);
                 }
             }
+
+            IncreasePrice(1);
         }
     }
     
@@ -214,6 +225,8 @@ public class MatchManager : MonoBehaviourPunCallbacks
             
             AcquireRandomNodeForPlayer(playerId);
         }
+
+        IncreasePrice(2);
     }
     
     private void AcquireRandomNodeForPlayer(int playerId)
