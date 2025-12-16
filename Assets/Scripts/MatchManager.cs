@@ -11,8 +11,17 @@ public class MatchManager : MonoBehaviourPunCallbacks
     [SerializeField] private TMP_Text scoresText;
     [SerializeField] private TMP_Text goldText;
 
+    [Header("Bonuses")]
+    [SerializeField] private UnityEngine.UI.Button[] bonusButtons;
+    [SerializeField] private int[] prices = {50, 100, 75};
+
+[SerializeField] private Color avaliableColor;
+    [SerializeField] private Color unavailableColor;
+    
     private Dictionary<int, IPlayerData> _players = new();
     private Dictionary<int, Color> _playerColorsCache = new();
+
+    private TMP_Text clickPowerText;
 
     private void Awake()
     {
@@ -31,6 +40,40 @@ public class MatchManager : MonoBehaviourPunCallbacks
     {
         Invoke(nameof(TryAssignMyStartingNode), 2f);
         //InvokeRepeating(nameof(UpdateGoldUI), 0f, 1f);
+        SetupBonusButtons();
+    }
+    
+    private void SetupBonusButtons()
+    {
+        bonusButtons[0].onClick.AddListener(() => BuyClickPowerBonus());
+        bonusButtons[1].onClick.AddListener(() => BuyGoldMultiplierBonus());
+        bonusButtons[2].onClick.AddListener(() => BuyRandomNodeBonus());
+        
+        clickPowerText = bonusButtons[0].gameObject.transform.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>();
+        
+        UpdateBonusButtonsAvailability();
+    }
+
+    private void UpdateBonusButtonsAvailability()
+    {
+        if (PhotonNetwork.LocalPlayer == null) return;
+        
+        int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        if (!_players.TryGetValue(localPlayerId, out IPlayerData playerData)) return;
+        
+        for (int i = 0; i < bonusButtons.Length; ++i)
+        {
+            int price = prices[i];
+            bool isAvailable = playerData.GoldCount >= price;
+            
+            bonusButtons[i].interactable = isAvailable;
+            
+            TMP_Text buttonText = bonusButtons[i].GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+            {
+                buttonText.color = isAvailable ? avaliableColor : unavailableColor;
+            }
+        }
     }
     
     public void RegisterPlayer(int playerId, IPlayerData playerData)
@@ -42,6 +85,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             
             UpdateScoresUI();
             UpdateGoldUI();
+            UpdateBonusButtonsAvailability();
         }
     }
     
@@ -69,6 +113,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
         {
             player.UpdateGold(delta);
             UpdateGoldUI();
+            UpdateBonusButtonsAvailability();
         }
     }
 
@@ -115,16 +160,89 @@ public class MatchManager : MonoBehaviourPunCallbacks
         Debug.LogWarning($"Color not found for player {playerId}, returning white");
         return Color.white;
     }
-
-    public void ChangeNodeOwner(int oldOwner, int newOwner, int value)
+    
+    public void BuyClickPowerBonus()
     {
-        if (oldOwner != -1)
+        if (PhotonNetwork.LocalPlayer == null) return;
+        
+        int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        if (!_players.TryGetValue(playerId, out IPlayerData player)) return;
+        
+        if (player.GoldCount >= prices[0])
         {
-            UpdatePlayerScore(oldOwner, -value);
+            UpdatePlayerGold(playerId, -prices[0]);
+            
+            player.ApplyBonus("click_power", 2f);
+            clickPowerText.text = $"INCREASE CLICK POWER: {player.ClickPower}";
+            
+            UpdateScoresUI();
+            UpdateGoldUI();
         }
-        if (newOwner != -1)
+    }
+    
+    public void BuyGoldMultiplierBonus()
+    {
+        if (PhotonNetwork.LocalPlayer == null) return;
+        
+        int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        if (!_players.TryGetValue(playerId, out IPlayerData player)) return;
+        
+        if (player.GoldCount >= prices[1])
         {
-            UpdatePlayerScore(newOwner, value);
+            UpdatePlayerGold(playerId, -prices[1]);
+            
+            foreach (GraphNode node in GraphManager.Instance.AllNodes)
+            {
+                if (node.CurrentNodeOwner == playerId)
+                {
+                    node.ApplyGoldMultiplier(2f);
+                }
+            }
+        }
+    }
+    
+    public void BuyRandomNodeBonus()
+    {
+        if (PhotonNetwork.LocalPlayer == null) return;
+        
+        int playerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        if (!_players.TryGetValue(playerId, out IPlayerData player)) return;
+        
+        if (player.GoldCount >= prices[2])
+        {
+            UpdatePlayerGold(playerId, -prices[2]);
+            
+            AcquireRandomNodeForPlayer(playerId);
+        }
+    }
+    
+    private void AcquireRandomNodeForPlayer(int playerId)
+    {
+        if (GraphManager.Instance == null) return;
+        
+        List<GraphNode> availableNodes = new List<GraphNode>();
+        
+        foreach (GraphNode node in GraphManager.Instance.AllNodes)
+        {
+            if (node.CurrentNodeOwner != playerId)
+            {
+                availableNodes.Add(node);
+            }
+        }
+        
+        if (availableNodes.Count == 0)
+        {
+            Debug.Log("Нет доступных узлов для захвата");
+            return;
+        }
+        
+        int randomIndex = UnityEngine.Random.Range(0, availableNodes.Count);
+        GraphNode targetNode = availableNodes[randomIndex];
+        
+        PhotonView nodePhotonView = targetNode.GetComponent<PhotonView>();
+        if (nodePhotonView != null)
+        {
+            nodePhotonView.RPC("RPC_AcquireNode", RpcTarget.All, playerId);
         }
     }
 
@@ -137,6 +255,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
         UpdateScoresUI();
         UpdateGoldUI();
+        UpdateBonusButtonsAvailability();
 
         // Даём стартовую ноду с задержкой 2 секунды (увеличил для надёжности)
         Invoke(nameof(TryAssignMyStartingNode), 2f);
@@ -221,6 +340,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             _playerColorsCache.Remove(playerId);
             UpdateScoresUI();
             UpdateGoldUI();
+            UpdateBonusButtonsAvailability();
             Debug.Log($"Player {playerId} removed from MatchManager");
         }
         

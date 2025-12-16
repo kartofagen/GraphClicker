@@ -10,6 +10,7 @@ public interface IPlayerData
     
     void UpdateScore(int delta);
     void UpdateGold(int delta);
+    void ApplyBonus(string bonusType, float value);
 }
 
 public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
@@ -81,6 +82,14 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
             _photonView.RPC("RPC_UpdateGold", RpcTarget.All, delta);
         }
     }
+    
+    public void ApplyBonus(string bonusType, float value)
+    {
+        if (_photonView.IsMine)
+        {
+            _photonView.RPC("RPC_ApplyBonus", RpcTarget.All, bonusType, value);
+        }
+    }
 
     [PunRPC]
     private void RPC_UpdateScore(int delta)
@@ -92,6 +101,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
     private void RPC_UpdateGold(int delta)
     {
         _goldCount += delta;
+    }
+    
+    [PunRPC]
+    private void RPC_ApplyBonus(string bonusType, float value)
+    {
+        if (bonusType == "click_power")
+        {
+            clickPower = Mathf.RoundToInt(clickPower * value);
+            Debug.Log($"Player click power increased to: {clickPower}");
+        }
     }
     
     public void RequestScoreSync()

@@ -21,6 +21,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [Header("Gold Generation")]
     [SerializeField] private float goldGenerationInterval = 5f;
     [SerializeField] private float goldValuePerSecond = 0.1f;
+    private int goldMultiplier = 1;
 
     [Header("Color Settings")]
     [SerializeField] private Image buttonImage;
@@ -244,12 +245,10 @@ public class GraphNode : MonoBehaviourPunCallbacks
         
         scoreText.text = $"{_nodeValue}";
 
-        /*// Правильные настройки для маленького текста
-        text.fontSize = 24f;                    // Базовый размер — подбери (16–28 обычно хорошо)
-        text.fontSizeMin = 10f;                 // Минимальный размер при авто-подгонке
-        text.fontSizeMax = 28f;                 // Максимальный
-        text.enableAutoSizing = true;           // Включаем авто-размер
-        text.alignment = TextAlignmentOptions.Center; // По центру*/
+        if (goldMultiplier > 1)
+        {
+            ownerText.text += $" (x{goldMultiplier})";
+        }
     }
 
     public void UpdateNodeColor()
@@ -268,17 +267,6 @@ public class GraphNode : MonoBehaviourPunCallbacks
     }
 
     [PunRPC]
-    public void RPC_SetOwner(int ownerActorNumber)
-    {
-        int oldOwner = _currentNodeOwner;
-        _currentNodeOwner = ownerActorNumber;
-        MatchManager.Instance.ChangeNodeOwner(oldOwner, _currentNodeOwner, _nodeValue);
-        UpdateNodeUI();
-        UpdateNodeColor();
-        MatchManager.Instance.UpdateScoresUI();
-    }
-
-    [PunRPC]
     private void RPC_AssignAsStartingNode(int playerId)
     {
         if (_currentNodeOwner != -1) return; // Уже занята — не трогаем
@@ -293,5 +281,42 @@ public class GraphNode : MonoBehaviourPunCallbacks
         UpdateNodeColor();
         graphManager?.OnNodeOwnerChanged(nodeIndex);
         MatchManager.Instance.UpdateScoresUI();
+    }
+    
+    [PunRPC]
+    public void RPC_AcquireNode(int playerId)
+    {
+        int oldOwner = _currentNodeOwner;
+        _currentNodeOwner = playerId;
+        
+        if (oldOwner != -1)
+        {
+            MatchManager.Instance.UpdatePlayerScore(oldOwner, -_nodeValue);
+        }
+        MatchManager.Instance.UpdatePlayerScore(playerId, _nodeValue);
+        
+        Debug.Log($"Нода [{nodeIndex}] захвачена игроком {playerId} через бонус");
+
+        UpdateNodeUI();
+        UpdateNodeColor();
+        graphManager?.OnNodeOwnerChanged(nodeIndex);
+        MatchManager.Instance.UpdateScoresUI();
+    }
+
+    [PunRPC]
+    public void RPC_ApplyGoldMultiplier(float multiplier)
+    {
+        goldValuePerSecond *= 2;
+        goldMultiplier *= 2;
+        Debug.Log($"Нода [{nodeIndex}] получила множитель золота: {goldMultiplier}");
+        UpdateNodeUI();
+    }
+
+    public void ApplyGoldMultiplier(float multiplier)
+    {
+        if (_photonView.IsMine)
+        {
+            _photonView.RPC("RPC_ApplyGoldMultiplier", RpcTarget.All, multiplier);
+        }
     }
 }
