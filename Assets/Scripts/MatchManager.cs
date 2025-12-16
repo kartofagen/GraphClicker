@@ -94,7 +94,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
             if (_players.TryGetValue(localPlayerId, out IPlayerData playerData))
             {
-                goldText.text = $"{playerData.GoldCount}";
+                goldText.text = $": {playerData.GoldCount}";
             }
         }
     }

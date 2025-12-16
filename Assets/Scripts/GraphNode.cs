@@ -69,6 +69,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
             buttonImage = GetComponent<Image>();
 
         button.onClick.AddListener(OnNodeClicked);
+
+        _goldGenerationTimer = nodeIndex / 100f; // чтоб не все одновременно
     }
 
     private void Start()
