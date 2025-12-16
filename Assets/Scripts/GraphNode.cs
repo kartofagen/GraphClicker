@@ -17,6 +17,10 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [SerializeField] private int initialValueMin = 10;
     [Range(0, 100)]
     [SerializeField] private int initialValueMax = 10;
+    
+    [Header("Gold Generation")]
+    [SerializeField] private float goldGenerationInterval = 5f;
+    [SerializeField] private float goldValuePerSecond = 0.1f;
 
     [Header("Color Settings")]
     [SerializeField] private Image buttonImage;
@@ -27,6 +31,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private PhotonView _photonView;
     private bool _isInitialized = false;
+    private float _goldGenerationTimer;
 
     [Header("Graph")]
     [SerializeField] private int nodeIndex = -1;
@@ -75,6 +80,31 @@ public class GraphNode : MonoBehaviourPunCallbacks
         else if (!_isInitialized)
         {
             _photonView.RPC("RPC_RequestSync", RpcTarget.MasterClient);
+        }
+    }
+    
+    private void Update()
+    {
+        if (PhotonNetwork.IsMasterClient && _currentNodeOwner != -1 && _nodeValue > 0)
+        {
+            _goldGenerationTimer += Time.deltaTime;
+            
+            if (_goldGenerationTimer >= goldGenerationInterval)
+            {
+                GenerateGold();
+                _goldGenerationTimer = 0f;
+            }
+        }
+    }
+
+    private void GenerateGold()
+    {
+        int goldGenerated = Mathf.RoundToInt(_nodeValue * goldValuePerSecond * goldGenerationInterval);
+        
+        if (goldGenerated > 0)
+        {
+            MatchManager.Instance.UpdatePlayerGold(_currentNodeOwner, goldGenerated);
+            Debug.Log($"Node [{nodeIndex}] generated {goldGenerated} gold for player {_currentNodeOwner}");
         }
     }
 
@@ -160,13 +190,11 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
         if (canClick)
         {
-            // ← ИСПРАВЛЕНО: передаём myId, а не несуществующую playerId
             _photonView.RPC("RPC_HandleClick", RpcTarget.All, myId, clickPower);
         }
         else
         {
             Debug.Log($"Player {myId} НЕ может захватить ноду [{nodeIndex}]: нет соседней своей вершины.");
-            // Можно добавить визуальный отклик: мигание красным и т.п.
         }
     }
 

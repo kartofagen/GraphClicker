@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 5931c0e884c71354599554c6e81aefb6
+guid: ca98b82030e289f4a83f4bf25d0ab1ab
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6231044458718751821
-    second: circle_0
+      213: 7436357055168573584
+    second: 4n4Fmme1jhlWY0wWfzC1--0--6erep-Photoroom_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,23 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: circle_0
+      name: 4n4Fmme1jhlWY0wWfzC1--0--6erep-Photoroom_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 128
-        height: 128
+        x: 161
+        y: 307
+        width: 703
+        height: 390
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3b3176a0412e689a0800000000000000
-      internalID: -6231044458718751821
+      spriteID: 090fa48975f333760800000000000000
+      internalID: 7436357055168573584
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5fb81ff4531bd60469f9968bda956fb0
     internalID: 0
     vertices: []
     indices: 
@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      4n4Fmme1jhlWY0wWfzC1--0--6erep-Photoroom_0: 7436357055168573584
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

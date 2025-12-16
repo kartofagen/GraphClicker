@@ -5,15 +5,18 @@ public interface IPlayerData
 {
     Color Color { get; }
     int Score { get; }
+    int GoldCount { get; }
     int ClickPower { get; }
     
-    void UpdateScore(int delta, bool fromRPC = false);
+    void UpdateScore(int delta);
+    void UpdateGold(int delta);
 }
 
 public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
 {
     public Color Color => _color;
     public int Score => _score;
+    public int GoldCount => _goldCount;
     public int ClickPower => clickPower;
     
     [Header("Properties")]
@@ -21,6 +24,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
 
     private Color _color;
     private int _score;
+    private int _goldCount = 0;
     
     private GraphNode[] _ownedNodes;
 
@@ -62,21 +66,32 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
         }
     }
 
-    public void UpdateScore(int delta, bool fromRPC = false)
+    public void UpdateScore(int delta)
     {
-        _score += delta;
-        
-        if (_photonView.IsMine && !fromRPC)
+        if (_photonView.IsMine)
         {
-            _photonView.RPC("RPC_UpdateScore", RpcTarget.All, _score);
+            _photonView.RPC("RPC_UpdateScore", RpcTarget.All, delta);
+        }
+    }
+
+    public void UpdateGold(int delta)
+    {
+        if (_photonView.IsMine)
+        {
+            _photonView.RPC("RPC_UpdateGold", RpcTarget.All, delta);
         }
     }
 
     [PunRPC]
-    private void RPC_UpdateScore(int newScore)
+    private void RPC_UpdateScore(int delta)
     {
-        _score = newScore;
-        MatchManager.Instance.UpdateScoresUI();
+        _score += delta;
+    }
+    
+    [PunRPC]
+    private void RPC_UpdateGold(int delta)
+    {
+        _goldCount += delta;
     }
     
     public void RequestScoreSync()

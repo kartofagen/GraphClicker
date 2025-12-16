@@ -9,6 +9,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
     public static MatchManager Instance { get; private set; }
 
     [SerializeField] private TMP_Text scoresText;
+    [SerializeField] private TMP_Text goldText;
 
     private Dictionary<int, IPlayerData> _players = new();
     private Dictionary<int, Color> _playerColorsCache = new();
@@ -29,6 +30,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
     private void Start()
     {
         Invoke(nameof(TryAssignMyStartingNode), 2f);
+        //InvokeRepeating(nameof(UpdateGoldUI), 0f, 1f);
     }
     
     public void RegisterPlayer(int playerId, IPlayerData playerData)
@@ -39,6 +41,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             Debug.Log($"Player {playerId} registered");
             
             UpdateScoresUI();
+            UpdateGoldUI();
         }
     }
     
@@ -60,6 +63,15 @@ public class MatchManager : MonoBehaviourPunCallbacks
         }
     }
 
+    public void UpdatePlayerGold(int playerId, int delta)
+    {
+        if (_players.TryGetValue(playerId, out IPlayerData player))
+        {
+            player.UpdateGold(delta);
+            UpdateGoldUI();
+        }
+    }
+
     public void UpdateScoresUI()
     {
         if (scoresText && _players.Count > 0)
@@ -72,6 +84,18 @@ public class MatchManager : MonoBehaviourPunCallbacks
                 scores += $"P{kvp.Key}: {kvp.Value.Score}\n";
             }
             scoresText.text = scores;
+        }
+    }
+
+    public void UpdateGoldUI()
+    {
+        if (goldText && PhotonNetwork.LocalPlayer != null)
+        {
+            int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
+            if (_players.TryGetValue(localPlayerId, out IPlayerData playerData))
+            {
+                goldText.text = $"{playerData.GoldCount}";
+            }
         }
     }
 
@@ -112,6 +136,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
         Debug.Log($"Игрок {PhotonNetwork.LocalPlayer.ActorNumber} в комнате. Master: {PhotonNetwork.IsMasterClient}");
 
         UpdateScoresUI();
+        UpdateGoldUI();
 
         // Даём стартовую ноду с задержкой 2 секунды (увеличил для надёжности)
         Invoke(nameof(TryAssignMyStartingNode), 2f);
@@ -195,6 +220,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
             _players.Remove(playerId);
             _playerColorsCache.Remove(playerId);
             UpdateScoresUI();
+            UpdateGoldUI();
             Debug.Log($"Player {playerId} removed from MatchManager");
         }
         

@@ -60,6 +60,7 @@ MonoBehaviour:
   - RPC_AssignStartingNode
   - RPC_RequestStartingNode
   - RPC_AssignAsStartingNode
+  - RPC_UpdateGold
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

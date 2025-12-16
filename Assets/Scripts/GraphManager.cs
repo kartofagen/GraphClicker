@@ -109,14 +109,11 @@ public class GraphManager : MonoBehaviour
 
     private Vector3 GetWorldPositionFromRectTransform(RectTransform rectTransform, Canvas canvas, Camera canvasCamera)
     {
-        // Для ScreenSpaceOverlay
         if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
         {
             Vector3 screenPos = rectTransform.position;
-            // Создаем точку в мировых координатах на определенной глубине
             return Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
         }
-        // Для других режимов Canvas
         return rectTransform.position;
     }
 
