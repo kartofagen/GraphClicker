@@ -108,12 +108,19 @@ public class GraphNode : MonoBehaviourPunCallbacks
         
         if (goldGenerated < 0) goldGenerated = MaxValue;
         
-        if (goldGenerated > 0)
+        if (goldGenerated > 0 && _currentNodeOwner != -1)
         {
-            MatchManager.Instance.UpdatePlayerGold(_currentNodeOwner, goldGenerated);
+            _photonView.RPC("RPC_GenerateGoldForPlayer", RpcTarget.All, _currentNodeOwner, goldGenerated);
             Debug.Log($"Node [{nodeIndex}] generated {goldGenerated} gold for player {_currentNodeOwner}");
         }
     }
+    
+    [PunRPC]
+    private void RPC_GenerateGoldForPlayer(int playerId, int goldAmount)
+    {
+        MatchManager.Instance.UpdatePlayerGold(playerId, goldAmount);
+    }
+    
 
     private void InitializeNode()
     {

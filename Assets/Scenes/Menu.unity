@@ -1358,9 +1358,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPlayers: 5
-  panels:
-  - {fileID: 1813490372}
-  - {fileID: 604898192}
+  playButton: {fileID: 0}
+  exitButton: {fileID: 0}
   OfflineMode: 0
 --- !u!1 &1251961184
 GameObject:

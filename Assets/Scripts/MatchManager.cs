@@ -132,14 +132,36 @@ public class MatchManager : MonoBehaviourPunCallbacks
     {
         if (scoresText && _players.Count > 0)
         {
-            var sortedPlayers = _players.OrderBy(kvp => kvp.Key);
-            
-            string scores = "Заражение:\n";
-            foreach (var kvp in sortedPlayers)
+            int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
+        
+            IPlayerData localPlayerData = null;
+            if (_players.TryGetValue(localPlayerId, out localPlayerData))
             {
-                scores += $"Червь {kvp.Key}: {kvp.Value.Score}\n";
+                var otherPlayers = _players
+                    .Where(kvp => kvp.Key != localPlayerId)
+                    .OrderByDescending(kvp => kvp.Value.Score)
+                    .ToList();
+            
+                string scores = "Заражение:\n";
+            
+                scores += $"Червь {localPlayerId} (Вы): {localPlayerData.Score}\n";
+                foreach (var kvp in otherPlayers)
+                {
+                    scores += $"Червь {kvp.Key}: {kvp.Value.Score}\n";
+                }
+            
+                scoresText.text = scores;
             }
-            scoresText.text = scores;
+            else
+            {
+                var sortedPlayers = _players.OrderBy(kvp => kvp.Key);
+                string scores = "Заражение:\n";
+                foreach (var kvp in sortedPlayers)
+                {
+                    scores += $"Червь {kvp.Key}: {kvp.Value.Score}\n";
+                }
+                scoresText.text = scores;
+            }
         }
     }
 

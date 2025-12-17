@@ -64,6 +64,7 @@ MonoBehaviour:
   - RPC_ApplyBonus
   - RPC_AcquireNode
   - RPC_ApplyGoldMultiplier
+  - RPC_GenerateGoldForPlayer
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
