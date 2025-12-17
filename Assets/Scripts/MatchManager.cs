@@ -124,7 +124,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
         {
             var sortedPlayers = _players.OrderBy(kvp => kvp.Key);
             
-            string scores = "Влияние:\n";
+            string scores = "Заражение:\n";
             foreach (var kvp in sortedPlayers)
             {
                 scores += $"P{kvp.Key}: {kvp.Value.Score}\n";
