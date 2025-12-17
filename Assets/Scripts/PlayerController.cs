@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using Photon.Pun;
+using Random = UnityEngine.Random;
 
 public interface IPlayerData
 {
@@ -31,6 +33,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
 
     private PhotonView _photonView;
     private bool _isInitialized = false;
+    
+    private const int MaxValue = Int32.MaxValue;
 
     private void Awake()
     {
@@ -94,13 +98,41 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
     [PunRPC]
     private void RPC_UpdateScore(int delta)
     {
-        _score += delta;
+        if (delta > 0)
+        {
+            if (_score <= MaxValue - delta)
+            {
+                _score += delta;
+            }
+            else
+            {
+                _score = MaxValue;
+            }
+        }
+        else
+        {
+            _score += delta;
+        }
     }
     
     [PunRPC]
     private void RPC_UpdateGold(int delta)
     {
-        _goldCount += delta;
+        if (delta > 0)
+        {
+            if (_goldCount <= MaxValue - delta)
+            {
+                _goldCount += delta;
+            }
+            else
+            {
+                _goldCount = MaxValue;
+            }
+        }
+        else
+        {
+            _goldCount += delta;
+        }
     }
     
     [PunRPC]
@@ -108,7 +140,14 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
     {
         if (bonusType == "click_power")
         {
-            clickPower = Mathf.RoundToInt(clickPower * value);
+            if (clickPower <= MaxValue / value)
+            {
+                clickPower = Mathf.RoundToInt(clickPower * value);
+            }
+            else if (clickPower < MaxValue)
+            {
+                clickPower = MaxValue;
+            }
             Debug.Log($"Player click power increased to: {clickPower}");
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using TMPro;
 using Photon.Pun;
@@ -28,6 +29,8 @@ public class MatchManager : MonoBehaviourPunCallbacks
     [Header("End Game UI - Auto Find")]
     [SerializeField] private GameObject endGamePanel;
     [SerializeField] private TMP_Text endGameMessageText;
+    
+    private const int MaxValue = Int32.MaxValue;
 
     private void Awake()
     {
@@ -166,6 +169,19 @@ public class MatchManager : MonoBehaviourPunCallbacks
         Debug.LogWarning($"Color not found for player {playerId}, returning white");
         return Color.white;
     }
+
+    private void IncreasePrice(int index)
+    {
+        if (prices[index] <= MaxValue / 2)
+        {
+            prices[index] *= 2;
+        }
+        else
+        {
+            prices[index] = MaxValue;
+        }
+        priceTexts[index].text = prices[index].ToString();
+    }
     
     public void BuyClickPowerBonus()
     {
@@ -186,12 +202,6 @@ public class MatchManager : MonoBehaviourPunCallbacks
             UpdateScoresUI();
             UpdateGoldUI();
         }
-    }
-
-    private void IncreasePrice(int index)
-    {
-        prices[index] *= 2;
-        priceTexts[index].text = prices[index].ToString();
     }
     
     public void BuyGoldMultiplierBonus()

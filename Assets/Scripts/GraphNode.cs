@@ -38,6 +38,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [SerializeField] private int nodeIndex = -1;
 
     private GraphManager _graphManager;
+    
+    private const int MaxValue = Int32.MaxValue;
 
     private GraphManager graphManager
     {
@@ -103,6 +105,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
     private void GenerateGold()
     {
         int goldGenerated = Mathf.RoundToInt(_nodeValue * goldValuePerSecond * goldGenerationInterval);
+        
+        if (goldGenerated < 0) goldGenerated = MaxValue;
         
         if (goldGenerated > 0)
         {
@@ -214,8 +218,21 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
         if (_currentNodeOwner == playerId)
         {
-            _nodeValue += clickPower;
-            MatchManager.Instance.UpdatePlayerScore(playerId, clickPower);
+            if (_nodeValue <= MaxValue - clickPower)
+            {
+                _nodeValue += clickPower;
+                MatchManager.Instance.UpdatePlayerScore(playerId, clickPower);
+            }
+            else
+            {
+                // Достигнут максимум, добавляем только до максимума
+                int remaining = MaxValue - _nodeValue;
+                if (remaining > 0)
+                {
+                    _nodeValue = MaxValue;
+                    MatchManager.Instance.UpdatePlayerScore(playerId, remaining);
+                }
+            }
         }
         else
         {
@@ -306,8 +323,16 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [PunRPC]
     public void RPC_ApplyGoldMultiplier(float multiplier)
     {
-        goldValuePerSecond *= 2;
-        goldMultiplier *= 2;
+        if (goldMultiplier <= MaxValue / 2)
+        {
+            goldMultiplier *= 2;
+            goldValuePerSecond *= 2;
+        }
+        else if (goldMultiplier < MaxValue)
+        {
+            goldMultiplier = MaxValue;
+            goldValuePerSecond *= 2;
+        }
         Debug.Log($"Нода [{nodeIndex}] получила множитель золота: {goldMultiplier}");
         UpdateNodeUI();
     }
