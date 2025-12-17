@@ -68,6 +68,9 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPlayerData
             MatchManager.Instance.RegisterPlayer(playerId, this);
             _isInitialized = true;
             Debug.Log($"Remote player {playerId} registered with color: {_color}");
+            
+            MatchManager.Instance.UpdateScoresUI();
+            MatchManager.Instance.UpdateGoldUI();
         }
     }
 

@@ -155,6 +155,8 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private void OnNodeClicked()
     {
+        if (MatchManager.Instance.LoadingActive) return;
+        
         if (PhotonNetwork.LocalPlayer == null) return;
 
         int myId = PhotonNetwork.LocalPlayer.ActorNumber;
@@ -293,17 +295,29 @@ public class GraphNode : MonoBehaviourPunCallbacks
     [PunRPC]
     private void RPC_AssignAsStartingNode(int playerId)
     {
-        if (_currentNodeOwner != -1) return; // Уже занята — не трогаем
+        if (_currentNodeOwner != -1) return;
 
         _currentNodeOwner = playerId;
-        _nodeValue = Math.Max(_nodeValue, 10); // Минимум 10, или оставь как есть
-        MatchManager.Instance.UpdatePlayerScore(playerId, _nodeValue);
+    
+        photonView.RPC("RPC_UpdateScoreAfterStartingNode", RpcTarget.All, playerId, _nodeValue);
 
         Debug.Log($"Нода [{nodeIndex}] назначена как стартовая игроку {playerId}");
 
         UpdateNodeUI();
         UpdateNodeColor();
         graphManager?.OnNodeOwnerChanged(nodeIndex);
+        MatchManager.Instance.UpdateScoresUI();
+    
+        if (playerId == PhotonNetwork.LocalPlayer.ActorNumber)
+        {
+            MatchManager.Instance.OnPlayerStartingNodeAssigned();
+        }
+    }
+
+    [PunRPC]
+    private void RPC_UpdateScoreAfterStartingNode(int playerId, int scoreValue)
+    {
+        MatchManager.Instance.UpdatePlayerScore(playerId, scoreValue);
         MatchManager.Instance.UpdateScoresUI();
     }
     

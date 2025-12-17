@@ -9,6 +9,8 @@ using UnityEngine.UI;
 public class MatchManager : MonoBehaviourPunCallbacks
 {
     public static MatchManager Instance { get; private set; }
+    
+    public bool LoadingActive => loadingActive;
 
     [SerializeField] private TMP_Text scoresText;
     [SerializeField] private TMP_Text goldText;
@@ -18,8 +20,13 @@ public class MatchManager : MonoBehaviourPunCallbacks
     [SerializeField] private int[] prices = {50, 100, 75};
     [SerializeField] private TMP_Text[] priceTexts;
 
-[SerializeField] private Color avaliableColor;
+    [SerializeField] private Color avaliableColor;
     [SerializeField] private Color unavailableColor;
+    
+    [Header("Loading Screen")]
+    [SerializeField] private GameObject loadingPanel;
+    private bool startingNodeAssigned = false;
+    private bool loadingActive = true;
     
     private Dictionary<int, IPlayerData> _players = new();
     private Dictionary<int, Color> _playerColorsCache = new();
@@ -50,8 +57,41 @@ public class MatchManager : MonoBehaviourPunCallbacks
     private void Start()
     {
         Invoke(nameof(TryAssignMyStartingNode), 2f);
-        //InvokeRepeating(nameof(UpdateGoldUI), 0f, 1f);
         SetupBonusButtons();
+    
+        if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(true);
+            loadingActive = true;
+        
+            for (int i = 0; i < bonusButtons.Length; ++i)
+            {
+                bonusButtons[i].interactable = false;
+            }
+        }
+    }
+
+    public void HideLoadingScreen()
+    {
+        if (loadingPanel != null && loadingActive)
+        {
+            loadingPanel.SetActive(false);
+            loadingActive = false;
+        
+            UpdateBonusButtonsAvailability();
+        }
+    }
+    
+    public void OnPlayerStartingNodeAssigned()
+    {
+        startingNodeAssigned = true;
+        StartCoroutine(HideLoadingScreenAfterDelay());
+    }
+    
+    private System.Collections.IEnumerator HideLoadingScreenAfterDelay()
+    {
+        yield return new WaitForSeconds(2f);
+        HideLoadingScreen();
     }
     
     private void SetupBonusButtons()
@@ -67,6 +107,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     private void UpdateBonusButtonsAvailability()
     {
+        if (loadingActive) return;
         if (PhotonNetwork.LocalPlayer == null) return;
         
         int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
@@ -111,7 +152,18 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     public void UpdatePlayerScore(int playerId, int delta)
     {
-        if (_players.TryGetValue(playerId, out IPlayerData player) && !iWon)
+        if (!_players.TryGetValue(playerId, out IPlayerData player))
+        {
+            Debug.Log($"Player {playerId} not registered yet, trying to find...");
+            player = GetPlayerData(playerId);
+            if (player == null)
+            {
+                Debug.LogWarning($"Cannot update score for unregistered player {playerId}");
+                return;
+            }
+        }
+    
+        if (!iWon)
         {
             player.UpdateScore(delta);
             UpdateScoresUI();
@@ -305,6 +357,12 @@ public class MatchManager : MonoBehaviourPunCallbacks
         Debug.Log("=== ONJOINEDROOM СРАБОТАЛ! ===");
         Debug.Log($"Игрок {PhotonNetwork.LocalPlayer.ActorNumber} в комнате. Master: {PhotonNetwork.IsMasterClient}");
 
+        if (loadingPanel != null && !loadingPanel.activeSelf)
+        {
+            loadingPanel.SetActive(true);
+            loadingActive = true;
+        }
+        
         UpdateScoresUI();
         UpdateGoldUI();
         UpdateBonusButtonsAvailability();
