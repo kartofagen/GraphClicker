@@ -240,7 +240,7 @@ public class GraphNode : MonoBehaviourPunCallbacks
 
     private void UpdateNodeUI()
     {
-        string ownerName = _currentNodeOwner == -1 ? "Никто" : $"P{_currentNodeOwner}";
+        string ownerName = _currentNodeOwner == -1 ? "Никто" : $"Червь {_currentNodeOwner}";
         ownerText.text = $"{ownerName}";
         
         scoreText.text = $"{_nodeValue}";
