@@ -3,6 +3,7 @@ using TMPro;
 using Photon.Pun;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.UI;
 
 public class MatchManager : MonoBehaviourPunCallbacks
 {
@@ -23,6 +24,10 @@ public class MatchManager : MonoBehaviourPunCallbacks
     private Dictionary<int, Color> _playerColorsCache = new();
 
     private TMP_Text clickPowerText;
+
+    [Header("End Game UI - Auto Find")]
+    [SerializeField] private GameObject endGamePanel;
+    [SerializeField] private TMP_Text endGameMessageText;
 
     private void Awake()
     {
@@ -362,5 +367,92 @@ public class MatchManager : MonoBehaviourPunCallbacks
         {
             node.UpdateNodeColor();
         }
+    }
+
+    private bool gameEnded = false;
+
+    public void CheckForGameEnd()
+    {
+        if (gameEnded || GraphManager.Instance == null) return;
+
+        GraphNode[] allNodes = GraphManager.Instance.AllNodes;
+        if (allNodes == null || allNodes.Length == 0) return;
+
+        int localPlayerId = PhotonNetwork.LocalPlayer.ActorNumber;
+
+        int myNodesCount = 0;
+        Dictionary<int, int> playerNodeCounts = new Dictionary<int, int>();
+
+        // Считаем ноды у каждого игрока (игнорируем нейтральные с owner == -1)
+        foreach (GraphNode node in allNodes)
+        {
+            int owner = node.CurrentNodeOwner;
+            if (owner == -1) continue;
+
+            if (owner == localPlayerId)
+                myNodesCount++;
+
+            if (playerNodeCounts.ContainsKey(owner))
+                playerNodeCounts[owner]++;
+            else
+                playerNodeCounts[owner] = 1;
+        }
+
+        // Проверка на глобальную победу: кто-то захватил ВСЕ ноды
+        foreach (var kvp in playerNodeCounts)
+        {
+            if (kvp.Value == allNodes.Length)
+            {
+                bool iWon = kvp.Key == localPlayerId;
+                ShowEndGameScreen(iWon ? "ПОБЕДА!" : "ПОРАЖЕНИЕ!");
+                return;
+            }
+        }
+
+        // Проверка на личное поражение: у меня 0 нод
+        // Но не показываем в первые 4 секунды после загрузки сцены (чтобы не было ложного поражения в начале)
+        if (Time.timeSinceLevelLoad >= 6f && myNodesCount == 0)
+        {
+            ShowEndGameScreen("ПОРАЖЕНИЕ!");
+        }
+    }
+
+    private void ShowEndGameScreen(string message)
+    {
+        if (gameEnded) return;
+        gameEnded = true;
+
+        endGamePanel.SetActive(true);
+        endGameMessageText.text = message;
+
+        // Отключаем все кнопки нод и бонусы, чтобы нельзя было дальше играть
+        foreach (GraphNode node in GraphManager.Instance.AllNodes)
+        {
+            Button btn = node.GetComponent<Button>();
+            if (btn != null) btn.interactable = false;
+        }
+
+        foreach (var bonusBtn in bonusButtons)
+        {
+            bonusBtn.interactable = false;
+        }
+    }
+
+    // Кнопка "В главное меню" на панели конца игры
+    public void ReturnToMainMenu()
+    {
+        if (PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(0); // индекс сцены меню
+        }
+    }
+
+    public override void OnLeftRoom()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(0); // возвращаемся в главное меню
     }
 }

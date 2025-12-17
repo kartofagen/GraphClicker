@@ -126,7 +126,7 @@ public class GraphManager : MonoBehaviour
 
     public void OnNodeOwnerChanged(int nodeIndex)
     {
-        
+        MatchManager.Instance?.CheckForGameEnd();
     }
 
     private GraphNode FindNodeAtPosition(Vector3 position)
