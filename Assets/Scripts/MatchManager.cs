@@ -29,6 +29,8 @@ public class MatchManager : MonoBehaviourPunCallbacks
     [Header("End Game UI - Auto Find")]
     [SerializeField] private GameObject endGamePanel;
     [SerializeField] private TMP_Text endGameMessageText;
+
+    private bool iWon;
     
     private const int MaxValue = Int32.MaxValue;
 
@@ -109,7 +111,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     public void UpdatePlayerScore(int playerId, int delta)
     {
-        if (_players.TryGetValue(playerId, out IPlayerData player))
+        if (_players.TryGetValue(playerId, out IPlayerData player) && !iWon)
         {
             player.UpdateScore(delta);
             UpdateScoresUI();
@@ -118,7 +120,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
 
     public void UpdatePlayerGold(int playerId, int delta)
     {
-        if (_players.TryGetValue(playerId, out IPlayerData player))
+        if (_players.TryGetValue(playerId, out IPlayerData player) && !iWon)
         {
             player.UpdateGold(delta);
             UpdateGoldUI();
@@ -413,7 +415,7 @@ public class MatchManager : MonoBehaviourPunCallbacks
         {
             if (kvp.Value == allNodes.Length)
             {
-                bool iWon = kvp.Key == localPlayerId;
+                iWon = kvp.Key == localPlayerId;
                 ShowEndGameScreen(iWon ? "ПОБЕДА!" : "ПОРАЖЕНИЕ!");
                 return;
             }
@@ -441,10 +443,9 @@ public class MatchManager : MonoBehaviourPunCallbacks
             Button btn = node.GetComponent<Button>();
             if (btn != null) btn.interactable = false;
         }
-
-        foreach (var bonusBtn in bonusButtons)
+        for (int i = 0; i < bonusButtons.Length; ++i)
         {
-            bonusBtn.interactable = false;
+            bonusButtons[i].interactable = false;
         }
     }
 
